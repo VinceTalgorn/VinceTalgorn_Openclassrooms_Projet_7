@@ -74,8 +74,8 @@ exports.createPost = async (req, res) => {
 
 //On vient mettre à jour le post
 exports.updatePost = async (req, res) => {
-    if (!ObjectID.isValid(req.params.userId))
-        return res.status(400).send("ID unknown : " + req.params.userId);
+    if (!ObjectID.isValid(req.params.id))
+        return res.status(400).send("ID unknown : " + req.params.id);
 
     const user = await UserModel.findById(req.body.userId);
 
@@ -102,7 +102,7 @@ exports.updatePost = async (req, res) => {
         filename = req.body.userId + Date.now() + ".jpg";
     }
 
-    PostModel.findOne({ _id: req.params.userId }, (err, post) => {
+    PostModel.findOne({ _id: req.params.id }, (err, post) => {
         if (post.userId == req.body.userId || user.admin) {
             post.message = req.body.message;
             post.video = req.body.video;
@@ -123,12 +123,12 @@ exports.updatePost = async (req, res) => {
 };
 
 exports.deletePost = async (req, res) => {
-    if (!ObjectID.isValid(req.params.userId))
+    if (!ObjectID.isValid(req.params.id))
         return res.status(400).send("ID unknown : " + req.params.postid);
 
     const user = await UserModel.findById(req.body.userId);
 
-    PostModel.findOne({ _id: req.params.userId }, (err, post) => {
+    PostModel.findOne({ _id: req.params.id }, (err, post) => {
         if (post.userId == req.body.userId || user.admin) {
             post.remove((err, doc) => {
                 if (!err) {
@@ -145,11 +145,11 @@ exports.deletePost = async (req, res) => {
 
 //On vient like le post
 exports.likePost = async (req, res) => {
-    if (!ObjectID.isValid(req.params.userId))
+    if (!ObjectID.isValid(req.params.id))
         return res.status(400).send("ID unknown : " + req.params.id);
     try {
         await PostModel.findByIdAndUpdate(
-            { _id: req.params.userId },
+            { _id: req.params.id },
             {
                 $addToSet: {
                     likers: req.body.userId,
@@ -161,10 +161,10 @@ exports.likePost = async (req, res) => {
             .catch((err) => res.status(500).send({ message: err }));
 
         await UserModel.findByIdAndUpdate(
-            { _id: req.body.userId },
+            { _id: req.body.id },
             {
                 $addToSet: {
-                    likes: req.params.userId,
+                    likes: req.params.id,
                 },
             },
             { new: true, upsert: true, setDefaultsOnInsert: true }
@@ -178,11 +178,11 @@ exports.likePost = async (req, res) => {
 
 //On vient unlike le post
 exports.unlikePost = async (req, res) => {
-    if (!ObjectID.isValid(req.params.userId))
-        return res.status(400).send("ID unknown : " + req.params.userId);
+    if (!ObjectID.isValid(req.params.id))
+        return res.status(400).send("ID unknown : " + req.params.id);
     try {
         await PostModel.findByIdAndUpdate(
-            { _id: req.params.userId },
+            { _id: req.params.id },
             {
                 $pull: {
                     likers: req.body.userId,
@@ -194,10 +194,10 @@ exports.unlikePost = async (req, res) => {
             .catch((err) => res.status(500).send({ message: err }));
 
         await UserModel.findByIdAndUpdate(
-            { _id: req.body.userId },
+            { _id: req.body.id },
             {
                 $pull: {
-                    likes: req.params.userId,
+                    likes: req.params.id,
                 },
             },
             { new: true, upsert: true, setDefaultsOnInsert: true }
@@ -211,12 +211,12 @@ exports.unlikePost = async (req, res) => {
 
 //On commente le post
 exports.commentPost = (req, res) => {
-    if (!ObjectID.isValid(req.params.userId))
+    if (!ObjectID.isValid(req.params.id))
         return res.status(400).send("ID unknown : " + req.params.id);
 
     try {
         return PostModel.findByIdAndUpdate(
-            req.params.userId,
+            req.params.id,
             {
                 $push: {
                     comments: {
@@ -240,13 +240,13 @@ exports.commentPost = (req, res) => {
 
 //On vient modifier le commentaire du post
 exports.editCommentPost = async (req, res) => {
-    if (!ObjectID.isValid(req.params.userId))
-        return res.status(400).send("ID unknown : " + req.params.userId);
+    if (!ObjectID.isValid(req.params.id))
+        return res.status(400).send("ID unknown : " + req.params.id);
 
-    const user = await UserModel.findById(req.body.userId);
+    const user = await UserModel.findById(req.body.id);
 
     try {
-        return PostModel.findById({ _id: req.params.userId }, (err, docs) => {
+        return PostModel.findById({ _id: req.params.id }, (err, docs) => {
             const theComment = docs.comments.find((comment) =>
                 comment._id.equals(req.body.commentId)
             );
@@ -273,15 +273,15 @@ exports.editCommentPost = async (req, res) => {
 
 //On supprime le commentaire du post
 exports.deleteCommentPost = async (req, res) => {
-    if (!ObjectID.isValid(req.params.userId))
-        return res.status(400).send("ID unknown : " + req.params.userId);
+    if (!ObjectID.isValid(req.params.id))
+        return res.status(400).send("ID unknown : " + req.params.id);
 
-    const user = await UserModel.findById(req.body.userId);
+    const user = await UserModel.findById(req.body.id);
 
     if (req.body.commenterId === user.id || user.admin) {
         try {
             return PostModel.findByIdAndUpdate(
-                req.params.userId,
+                req.params.id,
                 {
                     $pull: {
                         comments: {
