@@ -14,6 +14,7 @@ import Profil from "./pages/Profil";
 import Trending from "./pages/Trending";
 import Navbar from "./components/Navbar";
 import { getUser } from "./actions/user.actions";
+import cookie from "js-cookie";
 
 const App = () => {
     const [uid, setUid] = React.useState(null);
@@ -21,6 +22,11 @@ const App = () => {
 
     //On vient vérifier si le bon utilisateur est bien connecté grâce au token
     useEffect(() => {
+        const removeCookie = (key) => {
+            if (window !== undefined) {
+                cookie.remove(key, { expires: 1 });
+            }
+        };
         const fetchData = async () => {
             await fetch(
                 `${process.env.REACT_APP_API_URL}api/user/isConnected`,
@@ -34,13 +40,19 @@ const App = () => {
             )
                 .then((res) => res.json())
                 .then((res) => {
+                    //si le token n'est pas valide on releve une erreur, ce qui a pour effet d'aller dans le catch sans faire le setUid
+                    //car sans cela le setUid ajoute le message "No Token" dans le uid
+                    if (res.message && res.message === "No token")
+                        throw new Error("No token");
+
+                    //console.log(res);
                     setUid(res);
+                    if (uid) dispatch(getUser(uid));
+                    console.log(uid);
                 })
                 .catch((err) => console.log(err));
         };
         fetchData();
-
-        if (uid) dispatch(getUser(uid));
     }, [uid, dispatch]);
     //On retourne ce que l'on doit afficher sur la page
     return (
